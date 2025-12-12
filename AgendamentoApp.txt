@@ -1,0 +1,255 @@
+import javax.swing.*;
+import java.awt.event.*;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Collections;
+import java.io.IOException;
+
+public class AgendamentoApp {
+
+    static class Storage {
+        static final Path USERS_FILE = Paths.get("users.txt");
+
+        static boolean register(String username, String password) {
+            try {
+                if (!Files.exists(USERS_FILE)) {
+                    Files.createFile(USERS_FILE);
+                }
+
+                List<String> lines = Files.readAllLines(USERS_FILE);
+
+                for (String l : lines) {
+                    String[] parts = l.split(";");
+                    if (parts.length > 0 && parts[0].equalsIgnoreCase(username)) {
+                        return false;
+                    }
+                }
+
+                String line = username + ";" + password;
+                Files.write(USERS_FILE, Collections.singletonList(line), StandardOpenOption.APPEND);
+                return true;
+
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Erro ao registrar usuário: " + e.getMessage());
+                return false;
+            }
+        }
+
+        static boolean authenticate(String username, String password) {
+            try {
+                if (!Files.exists(USERS_FILE)) return false;
+
+                List<String> lines = Files.readAllLines(USERS_FILE);
+
+                for (String l : lines) {
+                    String[] parts = l.split(";");
+                    if (parts.length == 2 && parts[0].equals(username) && parts[1].equals(password)) {
+                        return true;
+                    }
+                }
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, "Erro ao autenticar: " + e.getMessage());
+            }
+            return false;
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(AgendamentoApp::showLoginScreen);
+    }
+
+    static void showLoginScreen() {
+        JFrame frame = new JFrame("Login");
+        frame.setSize(350, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(null);
+
+        JLabel l1 = new JLabel("Usuário:");
+        l1.setBounds(20, 20, 100, 25);
+        frame.add(l1);
+
+        JTextField userField = new JTextField();
+        userField.setBounds(100, 20, 200, 25);
+        frame.add(userField);
+
+        JLabel l2 = new JLabel("Senha:");
+        l2.setBounds(20, 60, 100, 25);
+        frame.add(l2);
+
+        JPasswordField passField = new JPasswordField();
+        passField.setBounds(100, 60, 200, 25);
+        frame.add(passField);
+
+        JButton login = new JButton("Entrar");
+        login.setBounds(50, 110, 100, 30);
+        frame.add(login);
+
+        JButton register = new JButton("Cadastrar");
+        register.setBounds(170, 110, 120, 30);
+        frame.add(register);
+
+        login.addActionListener(e -> {
+            if (Storage.authenticate(userField.getText(), new String(passField.getPassword()))) {
+                frame.dispose();
+                showServiceSelection();
+            } else {
+                JOptionPane.showMessageDialog(frame, "Usuário ou senha incorretos");
+            }
+        });
+
+        register.addActionListener(e -> {
+            frame.dispose();
+            showRegisterScreen();
+        });
+
+        frame.setVisible(true);
+    }
+
+    static void showRegisterScreen() {
+        JFrame frame = new JFrame("Cadastro");
+        frame.setSize(350, 200);
+        frame.setLayout(null);
+
+        JLabel l1 = new JLabel("Novo Usuário:");
+        l1.setBounds(20, 20, 120, 25);
+        frame.add(l1);
+
+        JTextField userField = new JTextField();
+        userField.setBounds(140, 20, 170, 25);
+        frame.add(userField);
+
+        JLabel l2 = new JLabel("Senha:");
+        l2.setBounds(20, 60, 120, 25);
+        frame.add(l2);
+
+        JPasswordField passField = new JPasswordField();
+        passField.setBounds(140, 60, 170, 25);
+        frame.add(passField);
+
+        JButton register = new JButton("Salvar");
+        register.setBounds(110, 110, 120, 30);
+        frame.add(register);
+
+        register.addActionListener(e -> {
+            boolean ok = Storage.register(userField.getText(), new String(passField.getPassword()));
+            if (ok) {
+                JOptionPane.showMessageDialog(frame, "Cadastro realizado!");
+                frame.dispose();
+                showLoginScreen();
+            } else {
+                JOptionPane.showMessageDialog(frame, "Usuário já existe.");
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    static void showServiceSelection() {
+        JFrame frame = new JFrame("Tipo de Atendimento");
+        frame.setSize(400, 300);
+        frame.setLayout(null);
+
+        JLabel lbl = new JLabel("Selecione o atendimento:");
+        lbl.setBounds(20, 20, 250, 25);
+        frame.add(lbl);
+
+        String[] options = {
+                "Esportivo",
+                "Adulto",
+                "Criança",
+                "Idoso",
+                "Adolescente",
+                "Gestante"
+        };
+
+        JComboBox<String> box = new JComboBox<>(options);
+        box.setBounds(20, 60, 200, 30);
+        frame.add(box);
+
+        JButton next = new JButton("Continuar");
+        next.setBounds(230, 60, 120, 30);
+        frame.add(next);
+
+        next.addActionListener(e -> {
+            frame.dispose();
+            showDateTimeSelection();
+        });
+
+        frame.setVisible(true);
+    }
+
+    static void showDateTimeSelection() {
+        JFrame frame = new JFrame("Agendamento");
+        frame.setSize(400, 300);
+        frame.setLayout(null);
+
+        JLabel lbl = new JLabel("Selecione dia (Terça a Sexta):");
+        lbl.setBounds(20, 20, 250, 25);
+        frame.add(lbl);
+
+        String[] dias = {"Terça", "Quarta", "Quinta", "Sexta"};
+        JComboBox<String> day = new JComboBox<>(dias);
+        day.setBounds(20, 60, 200, 30);
+        frame.add(day);
+
+        JLabel lblh = new JLabel("Horário (8h às 11:30):");
+        lblh.setBounds(20, 110, 250, 25);
+        frame.add(lblh);
+
+        String[] horas = {"08:00", "09:00", "10:00", "11:00", "11:30"};
+        JComboBox<String> hour = new JComboBox<>(horas);
+        hour.setBounds(20, 150, 200, 30);
+        frame.add(hour);
+
+        JButton cancel = new JButton("Cancelar");
+        cancel.setBounds(80, 200, 100, 30);
+        frame.add(cancel);
+
+        JButton finish = new JButton("Agendar");
+        finish.setBounds(200, 200, 120, 30);
+        frame.add(finish);
+
+        cancel.addActionListener(e -> {
+            frame.dispose();
+            showServiceSelection();
+        });
+
+        finish.addActionListener(e -> {
+            frame.dispose();
+            openFormLink();
+        });
+
+        frame.setVisible(true);
+    }
+
+    static void openFormLink() {
+        JOptionPane.showMessageDialog(null,
+                "Clique OK para abrir o formulário de pré consulta.");
+        try {
+            java.awt.Desktop.getDesktop().browse(
+                    new java.net.URI("https://forms.gle/L2Q2rNjR73m5mbHD7"));
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao abrir link.");
+        }
+
+        showSuccessScreen();
+    }
+
+    static void showSuccessScreen() {
+        JFrame frame = new JFrame("Concluído");
+        frame.setSize(300, 150);
+        frame.setLayout(null);
+
+        JLabel lbl = new JLabel("Agendamento concluído!");
+        lbl.setBounds(50, 20, 200, 30);
+        frame.add(lbl);
+
+        JButton exit = new JButton("Fechar");
+        exit.setBounds(90, 70, 100, 30);
+        frame.add(exit);
+
+        exit.addActionListener(e -> frame.dispose());
+
+        frame.setVisible(true);
+    }
+}
